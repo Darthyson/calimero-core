@@ -98,6 +98,7 @@ public class TransportLayerImpl implements TransportLayer
 		public void indication(final FrameEvent e)
 		{
 			final var cemi = e.getFrame();
+			logger.trace("denis: cemi {}", cemi);
 			if (cemi instanceof CemiTData) {
 				final int type = cemi.getMessageCode() == CemiTData.ConnectedIndication ? 3 : 2;
 				fireFrameType(cemi, type);
@@ -105,6 +106,7 @@ public class TransportLayerImpl implements TransportLayer
 			}
 
 			final CEMILData f = (CEMILData) cemi;
+			logger.trace("denis: CEMILData f {}", f);
 			if (f.getSource().equals(link().getKNXMedium().getDeviceAddress()))
 				return;
 
@@ -494,8 +496,10 @@ public class TransportLayerImpl implements TransportLayer
 			}
 			else {
 				// don't allow (client side)
-				if (d.getState() == Disconnected)
+				if (d.getState() == Disconnected) {
+					logger.debug("denis: d.getState() == Disconnected");
 					checkSendDisconnect(frame);
+				}
 			}
 		}
 		else if (ctrl == DISCONNECT) {
@@ -504,9 +508,11 @@ public class TransportLayerImpl implements TransportLayer
 		}
 		else if ((ctrl & 0xC0) == DATA_CONNECTED) {
 			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
+				logger.debug("denis: d.getState() == Disconnected || !sender.equals(d.getAddress())");
 				checkSendDisconnect(frame);
 			}
 			else {
+				logger.trace("denis: d.getState() == {}", d.getState());
 				Objects.requireNonNull(p);
 				p.restartTimeout();
 				if (seq == p.getSeqReceive()) {
@@ -521,8 +527,10 @@ public class TransportLayerImpl implements TransportLayer
 			}
 		}
 		else if ((ctrl & 0xC3) == ACK) {
-			if (d.getState() == Disconnected || !sender.equals(d.getAddress()))
+			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
+				logger.debug("denis: checkSendDisconnect ACK");
 				checkSendDisconnect(frame);
+			}
 			else if (d.getState() == OpenWait && seq == Objects.requireNonNull(p).getSeqSend()) {
 				p.incSeqSend();
 				p.setState(OpenIdle);
@@ -532,8 +540,10 @@ public class TransportLayerImpl implements TransportLayer
 				disconnectIndicate(p, true);
 		}
 		else if ((ctrl & 0xC3) == NACK) {
-			if (d.getState() == Disconnected || !sender.equals(d.getAddress()))
+			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
+				logger.debug("denis: NACK");
 				checkSendDisconnect(frame);
+			}
 			else if (d.getState() == OpenWait && seq == Objects.requireNonNull(p).getSeqSend()
 					&& repeated < MAX_REPEAT) {
 				// do nothing, we will send message again
@@ -595,8 +605,10 @@ public class TransportLayerImpl implements TransportLayer
 		p.getDestination().disconnectedBy = sendDisconnectReq ? Destination.LOCAL_ENDPOINT
 				: Destination.REMOTE_ENDPOINT;
 		try {
-			if (sendDisconnectReq)
+			if (sendDisconnectReq) {
+			    logger.debug("denis: sendDisconnectReq == true");
 				sendDisconnect(p.getDestination().getAddress());
+			}
 		}
 		finally {
 			fireDisconnected(p.getDestination());
@@ -607,7 +619,18 @@ public class TransportLayerImpl implements TransportLayer
 	private void checkSendDisconnect(final CEMILData frame) throws KNXLinkClosedException {
 		final IndividualAddress device = lnk.getKNXMedium().getDeviceAddress();
 		if (device.getRawAddress() == 0 || device.equals(frame.getDestination()))
+		{
+			if (device.getRawAddress() == 0)
+			{
+				logger.debug("denis: device.getRawAddress() =  0");
+			}
+			if (device.equals(frame.getDestination()))
+			{
+				logger.debug("denis: device.equals(frame.getDestination()) == true");
+			}
+
 			sendDisconnect(frame.getSource());
+		}
 	}
 
 	private void sendDisconnect(final IndividualAddress addr) throws KNXLinkClosedException

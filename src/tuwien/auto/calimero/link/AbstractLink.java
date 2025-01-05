@@ -199,11 +199,13 @@ public abstract class AbstractLink<T extends AutoCloseable> implements KNXNetwor
 					return;
 				final int mc = cemi.getMessageCode();
 				if (mc == CEMILData.MC_LDATA_IND) {
+					logger.debug("denis: indication from {} to {}", ldata.getSource(), ldata.getDestination());
 					addEvent(l -> l.indication(new FrameEvent(source, ldata)));
 					logger.debug("indication {}", ldata);
 				}
 				else if (mc == CEMILData.MC_LDATA_CON) {
-					addEvent(l -> l.confirmation(new FrameEvent(source, ldata)));
+					logger.debug("denis: confirmation from {} to {}", ldata.getDestination(), ldata.getSource());
+				    addEvent(l -> l.confirmation(new FrameEvent(source, ldata)));
 					if (ldata.isPositiveConfirmation())
 						logger.debug("confirmation of {}", ldata.getDestination());
 					else
