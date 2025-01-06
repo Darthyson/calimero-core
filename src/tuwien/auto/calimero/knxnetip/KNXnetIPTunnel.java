@@ -422,7 +422,21 @@ public class KNXnetIPTunnel extends ClientConnection
 							logger.info("received L_Data.con with hop count decremented by 1 (sent {}, got {})",
 									sendCount + 1, sendCount);
 						}
+						else {
+							// calimero-core issue #120
+							// Throws KNXTimeoutException due to missing confirmation although the confirmation was received
+							// https://github.com/calimero-project/calimero-core/issues/120#issuecomment-1533457583
+							logger.trace("denis: recv != sent");
+							logger.trace("denis: recv {}", DataUnitBuilder.toHex(recv, " "));
+							logger.trace("denis: sent {}", DataUnitBuilder.toHex(sent, " "));
+						}
 					}
+				}
+				else {
+					// calimero-core issue #120
+					// Throws KNXTimeoutException due to missing confirmation although the confirmation was received
+					// https://github.com/calimero-project/calimero-core/issues/120#issuecomment-1533457583
+					logger.trace("denis: ldata == {}, internalState: {}", ldata, internalState);
 				}
 			}
 			finally {
