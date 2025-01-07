@@ -176,4 +176,13 @@ public class ServiceAck extends ServiceType
 		os.write(status);
 		return os.toByteArray();
 	}
+
+	@Override
+	public String toString() {
+		String result = super.toString(); // service type
+		result += " #" + getSequenceNumber();
+		result += " " + getStatusString();
+		result += " (channel " + getChannelID() + ")";
+		return result;
+	}
 }

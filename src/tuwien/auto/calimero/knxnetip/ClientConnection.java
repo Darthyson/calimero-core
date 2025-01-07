@@ -347,6 +347,8 @@ public abstract class ClientConnection extends ConnectionBase
 				return true;
 
 			final ServiceAck res = new ServiceAck(svc, data, offset);
+			logger.trace("received service ack {} from {}", res, hostPort(ctrlEndpt));
+
 			if (!checkChannelId(res.getChannelID(), "acknowledgment"))
 				return true;
 			if (res.getSequenceNumber() != getSeqSend())
@@ -361,8 +363,11 @@ public abstract class ClientConnection extends ConnectionBase
 				if (logger.isTraceEnabled())
 					logger.trace("received service ack {} from {} (channel {})",
 							res.getSequenceNumber(), hostPort(ctrlEndpt), channelId);
-				if (internalState == ACK_ERROR)
-					logger.warn("received service acknowledgment status " + res.getStatusString());
+				if (internalState == ACK_ERROR) {
+					logger.warn("received service acknowledgment #{} sent #{} status {} (channel {})",
+							res.getSequenceNumber(), getSeqSend() - 1, res.getStatusString(),
+							res.getChannelID()); // was incremented some lines above
+				}
 			}
 		}
 		else
