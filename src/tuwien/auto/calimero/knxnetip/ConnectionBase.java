@@ -232,8 +232,8 @@ public abstract class ConnectionBase implements KNXnetIPConnection
 				int attempt = 0;
 				for (; attempt < maxSendAttempts; ++attempt) {
 					if (logger.isTraceEnabled())
-						logger.trace("sending cEMI frame seq {}, {}, attempt {} (channel {}) {}", getSeqSend(), mode,
-								(attempt + 1), channelId, DataUnitBuilder.toHex(buf, " "));
+						logger.trace("sending cEMI frame seq {}, {}, attempt {} (channel {}) {} `{}`", getSeqSend(), mode,
+								(attempt + 1), channelId, DataUnitBuilder.toHex(buf, " "), keepForCon);
 
 					send(buf, dataEndpt);
 					// shortcut for routing, don't switch into 'ack-pending'
