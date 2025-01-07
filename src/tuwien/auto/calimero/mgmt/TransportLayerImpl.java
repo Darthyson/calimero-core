@@ -98,7 +98,6 @@ public class TransportLayerImpl implements TransportLayer
 		public void indication(final FrameEvent e)
 		{
 			final var cemi = e.getFrame();
-			logger.trace("denis: cemi {}", cemi);
 			if (cemi instanceof CemiTData) {
 				final int type = cemi.getMessageCode() == CemiTData.ConnectedIndication ? 3 : 2;
 				fireFrameType(cemi, type);
@@ -106,7 +105,6 @@ public class TransportLayerImpl implements TransportLayer
 			}
 
 			final CEMILData f = (CEMILData) cemi;
-			logger.trace("denis: CEMILData f {}", f);
 			if (f.getSource().equals(link().getKNXMedium().getDeviceAddress()))
 				return;
 
@@ -497,7 +495,7 @@ public class TransportLayerImpl implements TransportLayer
 			else {
 				// don't allow (client side)
 				if (d.getState() == Disconnected) {
-					logger.debug("denis: d.getState() == Disconnected");
+					logger.debug("Unexpected: d.getState() == Disconnected");
 					checkSendDisconnect(frame);
 				}
 			}
@@ -508,14 +506,14 @@ public class TransportLayerImpl implements TransportLayer
 		}
 		else if ((ctrl & 0xC0) == DATA_CONNECTED) {
 			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
-				logger.debug("denis: d.getState() == Disconnected || !sender.equals(d.getAddress())");
+				logger.debug("Unexpected: d.getState() == Disconnected || !sender.equals(d.getAddress())");
 				checkSendDisconnect(frame);
 			}
 			else {
-				logger.trace("denis: d.getState() == {}", d.getState());
 				Objects.requireNonNull(p);
 				p.restartTimeout();
 				if (seq == p.getSeqReceive()) {
+					logger.trace("send T_Ack #{}", p.getSeqReceive());
 					lnk.sendRequest(sender, Priority.SYSTEM, new byte[] { (byte) (ACK | p.getSeqReceive() << 2) });
 					p.incSeqReceive();
 					fireFrameType(frame, 3);
@@ -528,7 +526,8 @@ public class TransportLayerImpl implements TransportLayer
 		}
 		else if ((ctrl & 0xC3) == ACK) {
 			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
-				logger.debug("denis: checkSendDisconnect ACK");
+				logger.debug("Unexpected: checkSendDisconnect on T_Ack #{} state {} sender {} destination {}",
+						seq, d.getState(), sender, d.getAddress());
 				checkSendDisconnect(frame);
 			}
 			else if (d.getState() == OpenWait && seq == Objects.requireNonNull(p).getSeqSend()) {
@@ -541,7 +540,7 @@ public class TransportLayerImpl implements TransportLayer
 		}
 		else if ((ctrl & 0xC3) == NACK) {
 			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
-				logger.debug("denis: NACK");
+				logger.debug("Unexpected: checkSendDisconnect on T_Nack");
 				checkSendDisconnect(frame);
 			}
 			else if (d.getState() == OpenWait && seq == Objects.requireNonNull(p).getSeqSend()
@@ -606,7 +605,7 @@ public class TransportLayerImpl implements TransportLayer
 				: Destination.REMOTE_ENDPOINT;
 		try {
 			if (sendDisconnectReq) {
-			    logger.debug("denis: sendDisconnectReq == true");
+			    logger.debug("Unexpected: sendDisconnectReq to {}", p.getDestination().getAddress());
 				sendDisconnect(p.getDestination().getAddress());
 			}
 		}
@@ -622,11 +621,11 @@ public class TransportLayerImpl implements TransportLayer
 		{
 			if (device.getRawAddress() == 0)
 			{
-				logger.debug("denis: device.getRawAddress() =  0");
+				logger.debug("Unexpected: device.getRawAddress() == 0");
 			}
 			if (device.equals(frame.getDestination()))
 			{
-				logger.debug("denis: device.equals(frame.getDestination()) == true");
+				logger.debug("Unexpected: device {} equals destination {}", device, frame.getDestination());
 			}
 
 			sendDisconnect(frame.getSource());
@@ -637,12 +636,12 @@ public class TransportLayerImpl implements TransportLayer
 	{
 		final byte[] tpdu = { (byte) DISCONNECT };
 		try {
-			logger.trace("send disconnect to {}", addr);
+			logger.trace("send disconnect to {} T_Disconnect", addr);
 			lnk.sendRequestWait(addr, Priority.SYSTEM, tpdu);
 		}
 		catch (final KNXTimeoutException ignore) {
 			// do a warning, but otherwise can be ignored
-			logger.warn("disconnected not gracefully (timeout)", ignore);
+			logger.warn("disconnected not gracefully (timeout) T_Disconnect", ignore);
 		}
 	}
 

@@ -426,9 +426,9 @@ public class KNXnetIPTunnel extends ClientConnection
 							// calimero-core issue #120
 							// Throws KNXTimeoutException due to missing confirmation although the confirmation was received
 							// https://github.com/calimero-project/calimero-core/issues/120#issuecomment-1533457583
-							logger.trace("denis: recv != sent");
-							logger.trace("denis: recv {}", DataUnitBuilder.toHex(recv, " "));
-							logger.trace("denis: sent {}", DataUnitBuilder.toHex(sent, " "));
+							logger.trace("Unexpected: recv != sent");
+							logger.trace("Unexpected: recv {}", DataUnitBuilder.toHex(recv, " "));
+							logger.trace("Unexpected: sent {}", DataUnitBuilder.toHex(sent, " "));
 						}
 					}
 				}
@@ -436,7 +436,7 @@ public class KNXnetIPTunnel extends ClientConnection
 					// calimero-core issue #120
 					// Throws KNXTimeoutException due to missing confirmation although the confirmation was received
 					// https://github.com/calimero-project/calimero-core/issues/120#issuecomment-1533457583
-					logger.trace("denis: ldata == {}, internalState: {}", ldata, internalState);
+					logger.trace("Unexpected: ldata == {}, internalState: {}", ldata, internalState);
 				}
 			}
 			finally {
