@@ -525,7 +525,7 @@ public class TransportLayerImpl implements TransportLayer
 					lnk.sendRequest(sender, Priority.SYSTEM, new byte[]{(byte) (ACK | seq << 2)});
 				}
 				else {
-					logger.warn("send T_Nack #{}", seq);
+					logger.trace("send T_Nack #{}", seq);
 					lnk.sendRequest(sender, Priority.SYSTEM, new byte[]{(byte) (NACK | seq << 2)});
 				}
 			}
