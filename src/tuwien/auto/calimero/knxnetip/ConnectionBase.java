@@ -288,7 +288,14 @@ public abstract class ConnectionBase implements KNXnetIPConnection
 		}
 	}
 
+	byte[] lastPacket = null; //todo remove, its only here for testing cemi sequence number on repeat
 	protected void send(final byte[] packet, final InetSocketAddress dst) throws IOException {
+		if (lastPacket == null) {
+			lastPacket = packet.clone();
+		}
+		else if (Arrays.equals(lastPacket, packet)) {
+			logger.warn("lastPacket == packet == {}", DataUnitBuilder.toHex(packet, " "));
+		}
 		final DatagramPacket p = new DatagramPacket(packet, packet.length, dst);
 		if (dst.equals(dataEndpt))
 			socket.send(p);
