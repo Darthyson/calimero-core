@@ -329,6 +329,7 @@ public class TransportLayerImpl implements TransportLayer
 			return;
 		p.setState(Connecting);
 		final byte[] tpdu = new byte[] { (byte) CONNECT };
+		logger.trace("connecting to {} T_Connect", d.getAddress());
 		lnk.sendRequestWait(d.getAddress(), Priority.SYSTEM, tpdu);
 		p.setState(OpenIdle);
 		logger.trace("connected with {}", d.getAddress());
@@ -364,7 +365,8 @@ public class TransportLayerImpl implements TransportLayer
 				active = ap;
 				for (repeated = 0; repeated < MAX_REPEAT + 1; ++repeated) {
 					try {
-						logger.trace("sending data connected to {}, attempt {}", d.getAddress(), (repeated + 1));
+						logger.trace("sending data connected to {}, attempt {}, T_Data_Connected #{}", d.getAddress(),
+								(repeated + 1), ap.getSeqSend());
 						// set state and timer
 						ap.setState(OpenWait);
 						lnk.sendRequestWait(d.getAddress(), p, tsdu);
@@ -518,10 +520,14 @@ public class TransportLayerImpl implements TransportLayer
 					p.incSeqReceive();
 					fireFrameType(frame, 3);
 				}
-				else if (seq == (p.getSeqReceive() - 1 & 0xF))
-					lnk.sendRequest(sender, Priority.SYSTEM, new byte[] { (byte) (ACK | seq << 2) });
-				else
-					lnk.sendRequest(sender, Priority.SYSTEM, new byte[] { (byte) (NACK | seq << 2) });
+				else if (seq == (p.getSeqReceive() - 1 & 0xF)) {
+					logger.trace("send T_Ack #{} (last again)", seq);
+					lnk.sendRequest(sender, Priority.SYSTEM, new byte[]{(byte) (ACK | seq << 2)});
+				}
+				else {
+					logger.warn("send T_Nack #{}", seq);
+					lnk.sendRequest(sender, Priority.SYSTEM, new byte[]{(byte) (NACK | seq << 2)});
+				}
 			}
 		}
 		else if ((ctrl & 0xC3) == ACK) {
@@ -535,8 +541,11 @@ public class TransportLayerImpl implements TransportLayer
 				p.setState(OpenIdle);
 				logger.trace("positive ack by {}", d.getAddress());
 			}
-			else
+			else {
+				logger.debug("Unexpected: received T_Ack #{} expected #{} state {} sender {} destination {}",
+						seq, Objects.requireNonNull(p).getSeqSend(), d.getState(), sender, d.getAddress());
 				disconnectIndicate(p, true);
+			}
 		}
 		else if ((ctrl & 0xC3) == NACK) {
 			if (d.getState() == Disconnected || !sender.equals(d.getAddress())) {
@@ -547,8 +556,11 @@ public class TransportLayerImpl implements TransportLayer
 					&& repeated < MAX_REPEAT) {
 				// do nothing, we will send message again
 			}
-			else
+			else {
+				logger.debug("Unexpected: received T_Nack #{} expected #{} state {} sender {} destination {}",
+						seq, Objects.requireNonNull(p).getSeqSend(), d.getState(), sender, d.getAddress());
 				disconnectIndicate(p, true);
+			}
 		}
 	}
 
